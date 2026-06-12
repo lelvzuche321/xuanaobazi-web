@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="XuanAo BaZi - Ancient Chinese Destiny Analysis. Discover your fate through the Four Pillars of Destiny. 玄奥八字 - 四柱命理解析，洞悉命运玄机。">
+    <meta name="keywords" content="BaZi, Four Pillars, Chinese Astrology, Destiny, 八字, 四柱, 命理, 算命, XuanAo">
+    <meta property="og:title" content="XuanAo BaZi | 玄奥八字 - Discover Your Destiny">
+    <meta property="og:description" content="Ancient Chinese metaphysical analysis. Unlock the secrets of your life path.">
+    <meta property="og:type" content="website">
+    <title>XuanAo BaZi | 玄奥八字 — Discover Your Destiny</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700;900&family=Noto+Serif+SC:wght@400;600;700;900&family=Noto+Sans+SC:wght@300;400;500;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>☯</text></svg>">
+<script>
+    // DEFINE GLOBAL VERIFY FUNCTION IMMEDIATELY (before any DOM)
+    window.verifyPaymentClick = function() {
+        var btn = document.getElementById('btnVerifyPayment');
+        var input = document.getElementById('txHashInput');
+        var statusEl = document.getElementById('paymentStatus');
+        var isZh = (typeof I18n !== 'undefined' && I18n.getLang() === 'zh');
+        if (!input) { alert('Page not fully loaded. Please try again.'); return; }
+        var txHash = input.value.trim();
+        if (!txHash) {
+            if (statusEl) statusEl.innerHTML = '<p class="status-error">' + (isZh ? '请输入交易哈希' : 'Please enter your transaction hash') + '</p>';
+            return;
+        }
+        if (btn) { btn.disabled = true; btn.textContent = isZh ? '验证中...' : 'Verifying...'; }
+        if (statusEl) statusEl.innerHTML = '<p class="status-pending"><span class="spinner"></span> ' + (isZh ? '正在区块链上验证，请稍候...' : 'Checking blockchain, please wait...') + '</p>';
+
+        var tries = 0;
+        var checker = setInterval(function() {
+            tries++;
+            if (typeof PaymentModule !== 'undefined') {
+                clearInterval(checker);
+                PaymentModule.verifyTransaction(txHash).then(function(result) {
+                    if (result.success) {
+                        if (statusEl) statusEl.innerHTML = '<p class="status-success">' + (isZh ? '支付验证成功！报告已解锁。' : 'Payment verified! Report unlocked.') + '</p>';
+                        setTimeout(function() {
+                            var m = document.getElementById('paymentModal');
+                            if (m) m.style.display = 'none';
+                            if (typeof window._onPaymentSuccess === 'function') window._onPaymentSuccess();
+                        }, 1500);
+                    } else {
+                        if (statusEl) statusEl.innerHTML = '<p class="status-error">' + result.message + '</p>';
+                        if (btn) { btn.disabled = false; btn.textContent = isZh ? '验证支付' : 'Verify Payment'; }
+                    }
+                }).catch(function() {
+                    if (statusEl) statusEl.innerHTML = '<p class="status-error">' + (isZh ? '网络错误，请稍后重试' : 'Network error, please try again') + '</p>';
+                    if (btn) { btn.disabled = false; btn.textContent = isZh ? '验证支付' : 'Verify Payment'; }
+                });
+            } else if (tries > 50) {
+                clearInterval(checker);
+                if (statusEl) statusEl.innerHTML = '<p class="status-error">' + (isZh ? '支付模块加载失败，请刷新重试。' : 'Failed to load payment module. Refresh and try again.') + '</p>';
+                if (btn) { btn.disabled = false; btn.textContent = isZh ? '验证支付' : 'Verify Payment'; }
+            }
+        }, 200);
+    };
+</script>
+</head>
+<body>
+
+<!-- Loading Screen -->
+<div class="loading-screen" id="loadingScreen">
+    <div class="taiji-spinner"></div>
+    <p class="loading-text" data-i18n="loading">Connecting to the cosmos...</p>
+</div>
+
+<!-- Navigation -->
+<nav class="navbar" id="navbar">
+    <div class="nav-inner">
+        <a href="#home" class="nav-brand">
+            <span class="brand-icon">☯</span>
+            <span class="brand-text">玄奥八字</span>
+            <span class="brand-text-en">XuanAo BaZi</span>
+        </a>
+        <div class="nav-links">
+            <a href="#home" data-i18n="nav_home">Home</a>
+            <a href="#calculator" data-i18n="nav_calculator">Calculator</a>
+            <a href="#about" data-i18n="nav_about">About</a>
+        </div>
+        <div class="nav-right">
+            <a href="https://twitter.com/YXL9999" target="_blank" class="nav-social" title="Twitter">𝕏</a>
+            <a href="https://t.me/LinX1997" target="_blank" class="nav-social" title="Telegram">✈</a>
+            <button class="lang-toggle" id="langToggle">
+                <span class="lang-cn active-lang">中</span>
+                <span class="lang-sep">/</span>
+                <span class="lang-en">EN</span>
+            </button>
+        </div>
+    </div>
+</nav>
+
+<!-- Hero Section -->
+<section class="section hero-section" id="home">
+    <div class="hero-bg"></div>
+    <div class="container hero-content">
+        <h1 class="hero-title">
+            <span class="hero-title-cn">玄 奥 八 字</span>
+            <span class="hero-title-en">XuanAo BaZi</span>
+        </h1>
+        <p class="hero-subtitle" data-i18n="hero_subtitle">Unlock the secrets of your destiny through the ancient wisdom of the Four Pillars</p>
+        <a href="#calculator" class="btn-glow btn-large" data-i18n="hero_cta">Begin Your Journey</a>
+    </div>
+</section>
+
+<!-- Calculator Section -->
+<section class="section calc-section" id="calculator">
+    <div class="container">
+        <h2 class="section-title" data-i18n="calc_title">BaZi Calculator</h2>
+        <p class="section-subtitle" data-i18n="calc_subtitle">Enter your birth details to reveal your destiny chart</p>
+
+        <form class="bazi-form" id="baziForm">
+            <div class="form-group">
+                <label data-i18n="label_name">Your Name (Optional)</label>
+                <input type="text" id="inputName" placeholder="e.g. John Doe / 张三" class="form-input">
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label data-i18n="label_date">Birth Date *</label>
+                    <input type="date" id="inputDate" required class="form-input">
+                </div>
+                <div class="form-group">
+                    <label data-i18n="label_time">Birth Time</label>
+                    <input type="time" id="inputTime" class="form-input">
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label data-i18n="label_location">Birth Location</label>
+                    <select id="inputLocation" class="form-input">
+                        <option value="auto" data-i18n="auto_detect">Auto Detect</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label data-i18n="label_gender">Gender</label>
+                    <div class="gender-select">
+                        <button type="button" class="gender-btn active" data-gender="male" data-i18n="male">Male</button>
+                        <button type="button" class="gender-btn" data-gender="female" data-i18n="female">Female</button>
+                    </div>
+                </div>
+            </div>
+            <div class="form-group checkbox-group">
+                <label class="checkbox-label">
+                    <input type="checkbox" id="inputSolarTime" checked>
+                    <span data-i18n="solar_time">Use True Solar Time (Recommended)</span>
+                </label>
+            </div>
+            <button type="submit" class="btn-glow btn-large btn-submit" data-i18n="btn_calculate">Reveal My Destiny</button>
+        </form>
+    </div>
+</section>
+
+<!-- Results Section -->
+<section class="section result-section" id="sectionResult" style="display:none;">
+    <div class="container">
+        <h2 class="section-title" data-i18n="result_title">Your BaZi Chart</h2>
+        <div id="baziChart" class="bazi-table"></div>
+        <div id="chartMeta" class="chart-meta"></div>
+
+        <!-- Share Buttons -->
+        <div class="share-buttons" id="shareButtons">
+            <button class="btn-share btn-share-copy" id="btnShareCopy" title="Copy Results">
+                📋 <span data-i18n="share_copy">Copy</span>
+            </button>
+            <button class="btn-share btn-share-twitter" id="btnShareTwitter" title="Share on Twitter/X">
+                𝕏 <span data-i18n="share_twitter">Twitter</span>
+            </button>
+            <button class="btn-share btn-share-telegram" id="btnShareTelegram" title="Share on Telegram">
+                ✈ <span data-i18n="share_telegram">Telegram</span>
+            </button>
+        </div>
+
+        <!-- Free Preview -->
+        <div class="free-preview" id="freePreview">
+            <h3 data-i18n="free_preview_title">Free Preview</h3>
+            <div class="preview-cards" id="previewCards"></div>
+            <div class="lock-banner">
+                <div class="lock-icon">🔒</div>
+                <p data-i18n="lock_banner_text">Unlock all 13 dimensions of analysis for just <strong>8 USDT</strong></p>
+                <button class="btn-glow" id="btnUnlock" data-i18n="btn_unlock">Unlock Full Report</button>
+            </div>
+        </div>
+
+        <!-- Full Report (Hidden until paid) -->
+        <div class="full-report" id="fullReport" style="display:none;">
+            <div class="unlocked-badge" data-i18n="unlocked_badge">✦ Premium Report Unlocked ✦</div>
+            <div class="report-tabs" id="reportTabs"></div>
+            <div class="report-content" id="reportContent"></div>
+        </div>
+
+        <!-- Privacy Notice -->
+        <div class="privacy-notice" id="privacyNotice" style="display:none;">
+            <p data-i18n="privacy_notice">🔒 Your data is computed entirely in your browser. Nothing is sent to any server.</p>
+            <button class="btn-clear-data" id="btnClearData" data-i18n="privacy_clear">Clear My Data</button>
+        </div>
+    </div>
+</section>
+
+<!-- ==================== PAYMENT MODAL ==================== -->
+<div class="modal-overlay" id="paymentModal" style="display:none;">
+    <div class="modal-content payment-modal">
+        <button class="modal-close" id="closePayment">×</button>
+        <h2 data-i18n="payment_title">Unlock Full Report</h2>
+        <p class="payment-price">8 <span class="usdt-icon">💲</span> USDT</p>
+        <p class="payment-network" data-i18n="payment_network">Solana Network (SPL-USDT)</p>
+
+        <div class="payment-steps">
+            <div class="step">
+                <div class="step-num">1</div>
+                <p data-i18n="payment_step1">Send exactly <strong>8 USDT</strong> to the address below (Solana SPL token only)</p>
+            </div>
+            <div class="wallet-address" id="walletAddress">
+                <code id="usdtAddress">DQyTeD9vr3WCAgWBsggQSGc1UXEgTD49csTcFgzcTBGH</code>
+                <button class="btn-copy" id="btnCopyAddress" data-i18n="copy">Copy</button>
+            </div>
+            <div class="qr-code-section">
+                <img src="assets/qrcode-sol.png" alt="Solana USDT QR Code" class="qr-code-img">
+                <p class="qr-hint" data-i18n="qr_hint">Or scan QR code to pay</p>
+            </div>
+            <div class="step">
+                <div class="step-num">2</div>
+                <p data-i18n="payment_step2">Paste your <strong>Transaction Hash (TxID)</strong> below</p>
+            </div>
+            <input type="text" class="tx-input" id="txHashInput" placeholder="Paste your TxID here...">
+            <div class="step">
+                <div class="step-num">3</div>
+                <p data-i18n="payment_step3">Click verify — your report unlocks instantly</p>
+            </div>
+            <button type="button" class="btn-glow btn-large" id="btnVerifyPayment" onclick="verifyPaymentClick()" data-i18n="verify_btn_text">Verify Payment</button>
+        </div>
+
+        <div class="payment-info">
+            <p data-i18n="payment_note">Your unlock is permanent and tied to this browser. Reopening the site will restore your access.</p>
+        </div>
+
+        <div class="payment-status" id="paymentStatus"></div>
+    </div>
+</div>
+
+<!-- ==================== ABOUT SECTION ==================== -->
+<section class="section about-section" id="about" style="display:none;">
+    <div class="container">
+        <h2 class="section-title" data-i18n="about_title">About XuanAo BaZi</h2>
+        <p class="section-subtitle" data-i18n="about_subtitle">Origins and Philosophy</p>
+        <div class="about-content">
+            <p data-i18n="about_p1">XuanAo BaZi is rooted in the ancient Chinese metaphysical tradition of the Four Pillars of Destiny (BaZi). This system dates back over a thousand years to the Song Dynasty and has been refined across generations.</p>
+            <p data-i18n="about_p2">Our engine decodes the cosmic patterns encoded in your birth moment — the Heavenly Stems, Earthly Branches, Five Elements, and their interactions — providing you with a comprehensive analysis of your life path.</p>
+            <p data-i18n="about_p3">BaZi is not fortune-telling; it is a map. It reveals your innate strengths, challenges, and the natural rhythms of your life journey, empowering you to make better decisions in alignment with your destiny.</p>
+            <hr>
+            <p class="about-disclaimer" data-i18n="about_disclaimer"><strong>Disclaimer:</strong> This reading is for reference and entertainment purposes only. It is not a substitute for professional financial, medical, or legal advice. Always use your own judgment in making life decisions.</p>
+        </div>
+    </div>
+</section>
+
+<!-- Footer -->
+<footer class="footer">
+    <div class="container">
+        <p>&copy; 2026 XuanAo BaZi | 玄奥八字</p>
+        <p class="footer-tagline">Ancient Wisdom · Modern Insight · Global Reach</p>
+        <div class="footer-social">
+            <a href="https://twitter.com/YXL9999" target="_blank">𝕏 Twitter @YXL9999</a>
+            <a href="https://t.me/LinX1997" target="_blank">✈ Telegram @LinX1997</a>
+        </div>
+    </div>
+</footer>
+
+<!-- Scripts -->
+<script src="js/bazi-engine.js"></script>
+<script src="js/geo-data.js"></script>
+<script src="js/i18n.js"></script>
+<script src="js/commentary.js"></script>
+<script src="js/script-engine.js"></script>
+<script src="js/payment.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
