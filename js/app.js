@@ -34,6 +34,17 @@
         if (shareButtons) { shareButtons.style.display = 'none'; }
         var privacyNotice = $('#privacyNotice');
         if (privacyNotice) { privacyNotice.style.display = 'none'; }
+        // Clear Zi Wei data
+        var zwPreview = $('#zwPreview');
+        if (zwPreview) { zwPreview.innerHTML = ''; zwPreview.style.display = 'none'; }
+        var zwFullReport = $('#zwFullReport');
+        if (zwFullReport) { zwFullReport.style.display = 'none'; zwFullReport.innerHTML = ''; }
+        var zwLockBanner = $('#zwLockBanner');
+        if (zwLockBanner) { zwLockBanner.style.display = 'none'; }
+        var zwShareButtons = $('#ziweiShareButtons');
+        if (zwShareButtons) { zwShareButtons.style.display = 'none'; }
+        var zwPrivacyNotice = $('#zwPrivacyNotice');
+        if (zwPrivacyNotice) { zwPrivacyNotice.style.display = 'none'; }
     }
 
     // ==================== INITIALIZATION ====================
@@ -57,10 +68,10 @@
             I18n.toggleLang();
         });
 
-        // Gender buttons
-        $$('.gender-btn').forEach(function(btn) {
+        // Gender buttons - only for BaZi form
+        $$('#calculator .gender-btn').forEach(function(btn) {
             btn.addEventListener('click', function() {
-                $$('.gender-btn').forEach(function(b) { b.classList.remove('active'); });
+                $$('#calculator .gender-btn').forEach(function(b) { b.classList.remove('active'); });
                 this.classList.add('active');
                 currentGender = this.dataset.gender;
             });
@@ -77,6 +88,7 @@
             }
             $('#paymentModal').style.display = 'flex';
             document.getElementById('usdtAddress').textContent = PaymentModule.WALLET_ADDRESS;
+            window._paymentContext = 'bazi';
         });
 
         // Close payment modal
@@ -117,6 +129,13 @@
         if ($('#btnShareCopy')) $('#btnShareCopy').addEventListener('click', handleShareCopy);
         if ($('#btnShareTwitter')) $('#btnShareTwitter').addEventListener('click', handleShareTwitter);
         if ($('#btnShareTelegram')) $('#btnShareTelegram').addEventListener('click', handleShareTelegram);
+        if ($('#btnShareFacebook')) $('#btnShareFacebook').addEventListener('click', handleShareFacebook);
+
+        // Zi Wei share buttons
+        if ($('#btnZWShareCopy')) $('#btnZWShareCopy').addEventListener('click', handleZWShareCopy);
+        if ($('#btnZWShareTwitter')) $('#btnZWShareTwitter').addEventListener('click', handleZWShareTwitter);
+        if ($('#btnZWShareTelegram')) $('#btnZWShareTelegram').addEventListener('click', handleZWShareTelegram);
+        if ($('#btnZWShareFacebook')) $('#btnZWShareFacebook').addEventListener('click', handleZWShareFacebook);
 
         // Clear data button
         if ($('#btnClearData')) $('#btnClearData').addEventListener('click', function() {
@@ -153,9 +172,65 @@
                 link.addEventListener('click', function() {
                     var about = $('#about');
                     if (about) about.style.display = 'none';
+                    var zwResult = $('#sectionZiweiResult');
+                    if (zwResult) zwResult.style.display = 'none';
                 });
             }
         });
+
+        // ==================== ZI WEI DOU SHU INTEGRATION ====================
+
+        // Initialize Zi Wei UI
+        if (typeof ZiWeiUI !== 'undefined') {
+            ZiWeiUI.init();
+        }
+
+        // Quick hand upload (in ZiWei form section)
+        initQuickHandUpload();
+
+        // Zi Wei unlock button
+        var btnZWUnlock = $('#btnZWUnlock');
+        if (btnZWUnlock) {
+            btnZWUnlock.addEventListener('click', function() {
+                var chart = ZiWeiEngine.getCurrentChart();
+                if (!chart) {
+                    alert(I18n.getLang() === 'zh' ? '请先生成命盘' : 'Please generate your chart first');
+                    return;
+                }
+                $('#paymentModal').style.display = 'flex';
+                document.getElementById('usdtAddress').textContent = PaymentModule.WALLET_ADDRESS;
+                // Set context to Zi Wei
+                window._paymentContext = 'ziwei';
+            });
+        }
+
+        // Update payment success handler for Zi Wei
+        var origPaymentSuccess = window._onPaymentSuccess;
+        window._onPaymentSuccess = function() {
+            if (window._paymentContext === 'ziwei') {
+                if (typeof ZiWeiUI !== 'undefined') {
+                    ZiWeiUI.unlock();
+                }
+                var zwResult = $('#sectionZiweiResult');
+                if (zwResult) zwResult.scrollIntoView({ behavior: 'smooth' });
+                window._paymentContext = null;
+            } else {
+                // Original BaZi flow
+                if (origPaymentSuccess) origPaymentSuccess();
+            }
+        };
+
+        // Zi Wei navigation
+        var navZiwei = document.querySelector('.nav-links a[href="#ziweidoushu"]');
+        if (navZiwei) {
+            navZiwei.addEventListener('click', function(e) {
+                e.preventDefault();
+                var about = $('#about');
+                if (about) about.style.display = 'none';
+                var ziwei = $('#ziweidoushu');
+                if (ziwei) ziwei.scrollIntoView({ behavior: 'smooth' });
+            });
+        }
 
         // Nav buttons
         // Language change listener
@@ -166,6 +241,10 @@
                 if (PaymentModule.isUnlocked()) {
                     renderFullReport(currentChart);
                 }
+            }
+            // Re-render Zi Wei UI if chart is active
+            if (typeof ZiWeiUI !== 'undefined' && typeof ZiWeiUI.reRender === 'function') {
+                ZiWeiUI.reRender();
             }
         });
 
@@ -549,60 +628,240 @@
         contentEl.innerHTML = html;
     }
 
+    // ==================== QUICK HAND UPLOAD (ZiWei form area) ====================
+
+    // Store uploaded hand image globally for cross-module access
+    window._quickHandImage = null;
+
+    function initQuickHandUpload() {
+        var uploadArea = $('#quickHandUploadArea');
+        var fileInput = $('#quickHandFileInput');
+        if (!uploadArea || !fileInput) return;
+
+        uploadArea.addEventListener('click', function() {
+            fileInput.click();
+        });
+
+        fileInput.addEventListener('change', function() {
+            if (this.files && this.files[0]) {
+                var reader = new FileReader();
+                reader.onload = function(e) {
+                    window._quickHandImage = e.target.result;
+                    var placeholder = $('#quickHandUploadPlaceholder');
+                    var preview = $('#quickHandUploadPreview');
+                    var img = $('#quickHandUploadImg');
+                    if (placeholder) placeholder.style.display = 'none';
+                    if (preview) preview.style.display = 'block';
+                    if (img) img.src = window._quickHandImage;
+                };
+                reader.readAsDataURL(this.files[0]);
+            }
+        });
+
+        var removeBtn = $('#quickHandUploadRemove');
+        if (removeBtn) {
+            removeBtn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                window._quickHandImage = null;
+                var placeholder = $('#quickHandUploadPlaceholder');
+                var preview = $('#quickHandUploadPreview');
+                if (placeholder) placeholder.style.display = '';
+                if (preview) preview.style.display = 'none';
+                if (fileInput) fileInput.value = '';
+            });
+        }
+    }
+
     // ==================== SHARE ====================
 
     function getSiteUrl() {
         return window.location.origin + window.location.pathname;
     }
 
-    function buildShareText() {
+    // ---- BaZi share text ----
+    function buildBaziShareText() {
         if (!currentChart) return '';
         var dm = currentChart.dayMaster;
         var siteUrl = getSiteUrl();
         var isZh = I18n.getLang() === 'zh';
 
         if (isZh) {
-            return '🔮 我在「玄奥八字」查看了我的命理分析！\n'
+            return '🔮 我在「玄奥八字」测了命盘！\n'
                 + '日主：' + dm.stemName + '（' + dm.elementName + '）\n'
                 + '生肖：' + currentChart.yearPillar.animal + '\n'
-                + '解锁13维度完整报告仅需 8 USDT\n'
-                + '关注 @YXL9999 推特 | @LinX1997 电报\n'
+                + '━━━━━━━━━━━━━━━━\n'
+                + '💰 测命理还能赚2USDT！\n'
+                + '每推荐1人消费，你得2U返佣\n'
+                + '分享给朋友一起赚 ⬇\n'
+                + '━━━━━━━━━━━━━━━━\n'
                 + siteUrl;
         } else {
-            return '🔮 I checked my BaZi destiny at XuanAo BaZi!\n'
+            return '🔮 My BaZi reading at XuanAo BaZi!\n'
                 + 'Day Master: ' + dm.stemEn + ' (' + dm.elementEn + ')\n'
                 + 'Zodiac: ' + currentChart.yearPillar.animalEn + '\n'
-                + 'Unlock 13-dimension full report for only 8 USDT\n'
-                + 'Follow @YXL9999 Twitter | @LinX1997 Telegram\n'
+                + '━━━━━━━━━━━━━━━━\n'
+                + '💰 Earn 2 USDT per referral!\n'
+                + 'Share with friends & get paid\n'
+                + 'Get your destiny blueprint ⬇\n'
+                + '━━━━━━━━━━━━━━━━\n'
                 + siteUrl;
         }
     }
 
+    function buildBaziTweetText() {
+        if (!currentChart) return getSiteUrl();
+        var dm = currentChart.dayMaster;
+        var siteUrl = getSiteUrl();
+        var isZh = I18n.getLang() === 'zh';
+
+        if (isZh) {
+            return '🔮 我刚测了八字命盘！日主' + dm.stemName + '（' + dm.elementName + '），生肖' + currentChart.yearPillar.animal
+                + '。测命理还能赚2U！来测你的命盘，分享给朋友一起赚💰\n'
+                + siteUrl + '\n#八字 #命理';
+        } else {
+            return '🔮 My BaZi: ' + dm.stemEn + ' (' + dm.elementEn + '), Zodiac: ' + currentChart.yearPillar.animalEn
+                + '. Earn 2 USDT per referral! Get your destiny blueprint ⬇\n'
+                + siteUrl + '\n#BaZi #ChineseAstrology';
+        }
+    }
+
+    // ---- ZiWei share text ----
+    function buildZiweiShareText() {
+        var chart = (typeof ZiWeiEngine !== 'undefined') ? ZiWeiEngine.getCurrentChart() : null;
+        if (!chart) return '';
+        var siteUrl = getSiteUrl();
+        var isZh = I18n.getLang() === 'zh';
+        var sp = chart.soulPalace || {};
+        var bp = chart.bodyPalace || {};
+        var spStars = (sp.majorStars && sp.majorStars.length > 0) ? sp.majorStars.slice(0, 2).join('+') : '—';
+        var spName = sp.name || '命宫';
+        var bpName = bp.name || '身宫';
+
+        if (isZh) {
+            return '🔮 我刚测了紫微斗数命盘！\n'
+                + spName + '主星：' + spStars + '\n'
+                + '身宫：' + bpName + '\n'
+                + '━━━━━━━━━━━━━━━━\n'
+                + '💰 测命理还能赚2USDT！\n'
+                + '每推荐1人消费，你得2U返佣\n'
+                + '分享给朋友一起赚 ⬇\n'
+                + '━━━━━━━━━━━━━━━━\n'
+                + siteUrl;
+        } else {
+            return '🔮 My ZiWei DouShu chart revealed!\n'
+                + spName + ' Stars: ' + spStars + '\n'
+                + 'Body Palace: ' + bpName + '\n'
+                + '━━━━━━━━━━━━━━━━\n'
+                + '💰 Earn 2 USDT per referral!\n'
+                + 'Share with friends & get paid\n'
+                + 'Unlock your destiny blueprint ⬇\n'
+                + '━━━━━━━━━━━━━━━━\n'
+                + siteUrl;
+        }
+    }
+
+    function buildZiweiTweetText() {
+        var chart = (typeof ZiWeiEngine !== 'undefined') ? ZiWeiEngine.getCurrentChart() : null;
+        if (!chart) return getSiteUrl();
+        var siteUrl = getSiteUrl();
+        var isZh = I18n.getLang() === 'zh';
+        var sp = chart.soulPalace || {};
+        var spStars = (sp.majorStars && sp.majorStars.length > 0) ? sp.majorStars.slice(0, 2).join('+') : '—';
+        var spName = sp.name || '命宫';
+
+        if (isZh) {
+            return '🔮 我的紫微斗数命盘：' + spName + '坐' + spStars
+                + '。测命理还能赚2U！来测你的命盘，分享给朋友一起赚💰\n'
+                + siteUrl + '\n#紫微斗数 #命理';
+        } else {
+            return '🔮 My ZiWei chart: ' + spName + ' has ' + spStars
+                + '. Earn 2 USDT per referral! Get your reading ⬇\n'
+                + siteUrl + '\n#ZiWeiDouShu #ChineseAstrology';
+        }
+    }
+
+    // ---- generic helpers ----
+    function getCurrentShareText() {
+        // auto-detect which module is active
+        var zwSection = $('#ziweidoushu');
+        if (zwSection && window.getComputedStyle(zwSection).display !== 'none') {
+            var zwChart = (typeof ZiWeiEngine !== 'undefined') ? ZiWeiEngine.getCurrentChart() : null;
+            if (zwChart) return buildZiweiShareText();
+        }
+        if (currentChart) return buildBaziShareText();
+        return getSiteUrl();
+    }
+
+    function getCurrentTweetText() {
+        var zwSection = $('#ziweidoushu');
+        if (zwSection && window.getComputedStyle(zwSection).display !== 'none') {
+            var zwChart = (typeof ZiWeiEngine !== 'undefined') ? ZiWeiEngine.getCurrentChart() : null;
+            if (zwChart) return buildZiweiTweetText();
+        }
+        if (currentChart) return buildBaziTweetText();
+        return getSiteUrl();
+    }
+
+    function flashButton(btnId, icon, text) {
+        var btn = $(btnId);
+        if (!btn) return;
+        var orig = btn.innerHTML;
+        btn.innerHTML = icon + ' ' + text;
+        btn.style.pointerEvents = 'none';
+        setTimeout(function() {
+            btn.innerHTML = orig;
+            btn.style.pointerEvents = '';
+        }, 2000);
+    }
+
+    // ---- BaZi handlers ----
     function handleShareCopy() {
-        var text = buildShareText();
+        var text = buildBaziShareText();
         navigator.clipboard.writeText(text).then(function() {
-            var btn = $('#btnShareCopy');
-            var orig = btn.innerHTML;
-            btn.innerHTML = '✅ ' + I18n.t('share_copied');
-            setTimeout(function() { btn.innerHTML = orig; }, 2000);
+            flashButton('#btnShareCopy', '✅', I18n.t('share_copied'));
         }).catch(function() {
             alert('Copy failed. Please try again.');
         });
     }
 
     function handleShareTwitter() {
-        var isZh = I18n.getLang() === 'zh';
-        var tweetText = isZh
-            ? '🔮 我的八字命理分析揭晓了！来看看你的：' + getSiteUrl() + '\n@YXL9999 #BaZi #四柱八字 #命理'
-            : '🔮 My BaZi Destiny revealed! Check yours: ' + getSiteUrl() + '\n@YXL9999 #BaZi #ChineseAstrology';
-        var url = 'https://twitter.com/intent/tweet?text=' + encodeURIComponent(tweetText);
-        window.open(url, '_blank');
+        window.open('https://twitter.com/intent/tweet?text=' + encodeURIComponent(buildBaziTweetText()), '_blank');
     }
 
     function handleShareTelegram() {
-        var text = buildShareText();
-        var url = 'https://t.me/share/url?url=' + encodeURIComponent(getSiteUrl()) + '&text=' + encodeURIComponent(text.substring(0, 200));
-        window.open(url, '_blank');
+        var text = buildBaziShareText().replace(/\n/g, '%0A');
+        window.open('https://t.me/share/url?url=' + encodeURIComponent(getSiteUrl()) + '&text=' + text, '_blank');
+    }
+
+    function handleShareFacebook() {
+        window.open('https://www.facebook.com/sharer/sharer.php?u=' + encodeURIComponent(getSiteUrl()) + '&quote=' + encodeURIComponent(buildBaziShareText()), '_blank');
+    }
+
+    // ---- ZiWei handlers ----
+    function handleZWShareCopy() {
+        var text = buildZiweiShareText();
+        if (!text) return;
+        navigator.clipboard.writeText(text).then(function() {
+            flashButton('#btnZWShareCopy', '✅', I18n.t('share_copied'));
+        }).catch(function() {
+            alert('Copy failed. Please try again.');
+        });
+    }
+
+    function handleZWShareTwitter() {
+        window.open('https://twitter.com/intent/tweet?text=' + encodeURIComponent(buildZiweiTweetText()), '_blank');
+    }
+
+    function handleZWShareTelegram() {
+        var text = buildZiweiShareText().replace(/\n/g, '%0A');
+        if (!text) return;
+        window.open('https://t.me/share/url?url=' + encodeURIComponent(getSiteUrl()) + '&text=' + text, '_blank');
+    }
+
+    function handleZWShareFacebook() {
+        var text = buildZiweiShareText();
+        if (!text) return;
+        window.open('https://www.facebook.com/sharer/sharer.php?u=' + encodeURIComponent(getSiteUrl()) + '&quote=' + encodeURIComponent(text), '_blank');
     }
 
     document.addEventListener('DOMContentLoaded', init);

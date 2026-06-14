@@ -78,7 +78,8 @@
         </a>
         <div class="nav-links">
             <a href="#home" data-i18n="nav_home">Home</a>
-            <a href="#calculator" data-i18n="nav_calculator">Calculator</a>
+            <a href="#calculator" data-i18n="nav_calculator">BaZi</a>
+            <a href="#ziweidoushu" data-i18n="nav_ziwei">ZiWei</a>
             <a href="#about" data-i18n="nav_about">About</a>
         </div>
         <div class="nav-right">
@@ -171,6 +172,9 @@
             <button class="btn-share btn-share-telegram" id="btnShareTelegram" title="Share on Telegram">
                 ✈ <span data-i18n="share_telegram">Telegram</span>
             </button>
+            <button class="btn-share btn-share-facebook" id="btnShareFacebook" title="Share on Facebook">
+                📘 <span data-i18n="share_facebook">Facebook</span>
+            </button>
         </div>
 
         <!-- Free Preview -->
@@ -195,6 +199,125 @@
         <div class="privacy-notice" id="privacyNotice" style="display:none;">
             <p data-i18n="privacy_notice">🔒 Your data is computed entirely in your browser. Nothing is sent to any server.</p>
             <button class="btn-clear-data" id="btnClearData" data-i18n="privacy_clear">Clear My Data</button>
+        </div>
+    </div>
+</section>
+
+<!-- ==================== ZI WEI DOU SHU SECTION ==================== -->
+<section class="section ziwei-section" id="ziweidoushu">
+    <div class="container">
+        <div class="section-header">
+            <h2 class="section-title" data-i18n="zw_section_title">紫微斗数 · Zi Wei Dou Shu</h2>
+            <p class="section-subtitle" data-i18n="zw_section_subtitle">Purple Star Astrology — 精准排盘 · 十二宫位 · 四化飞星 · 手相互证</p>
+        </div>
+        
+        <div class="ziwei-intro">
+            <p data-i18n="zw_intro_p1">紫微斗数是"帝王之术"，通过出生年月日时排出十二宫位，分析星曜分布、四化飞星，精准解读命盘底色、事业财运、感情婚姻。</p>
+            <p data-i18n="zw_intro_p2">本系统基于 <strong>iztro 开源算法</strong>精确排盘，融合<strong>三合派 + 中州派</strong>理论，支持<strong>手相交叉认证</strong>。</p>
+        </div>
+
+        <!-- Zi Wei Form -->
+        <form id="ziweiForm" class="bazi-form ziwei-form">
+            <div class="form-row">
+                <div class="form-group">
+                    <label data-i18n="zw_birth_date">出生日期</label>
+                    <input type="date" id="zwBirthDate" required>
+                </div>
+                <div class="form-group">
+                    <label data-i18n="zw_birth_hour">出生时辰</label>
+                    <select id="zwBirthHour">
+                        <option value="0">子时 (23:00-01:00)</option>
+                        <option value="1">丑时 (01:00-03:00)</option>
+                        <option value="2">寅时 (03:00-05:00)</option>
+                        <option value="3">卯时 (05:00-07:00)</option>
+                        <option value="4">辰时 (07:00-09:00)</option>
+                        <option value="5">巳时 (09:00-11:00)</option>
+                        <option value="6">午时 (11:00-13:00)</option>
+                        <option value="7">未时 (13:00-15:00)</option>
+                        <option value="8">申时 (15:00-17:00)</option>
+                        <option value="9">酉时 (17:00-19:00)</option>
+                        <option value="10">戌时 (19:00-21:00)</option>
+                        <option value="11">亥时 (21:00-23:00)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label data-i18n="zw_gender">性别</label>
+                    <div class="gender-toggle">
+                        <button type="button" class="gender-btn active" data-gender="男" data-i18n="male">男</button>
+                        <button type="button" class="gender-btn" data-gender="女" data-i18n="female">女</button>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label data-i18n="zw_calendar">历法</label>
+                    <div class="calendar-toggle">
+                        <label class="switch-label">
+                            <input type="checkbox" id="zwIsLunar">
+                            <span class="switch-text" data-i18n="zw_lunar">农历</span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+            <button type="submit" class="btn-glow btn-large btn-submit" data-i18n="zw_calculate">排盘解读</button>
+        </form>
+
+        <!-- Hand Upload (visible before calculation) -->
+        <div class="hand-upload-section-quick" id="quickHandUpload" style="max-width:800px; margin: 24px auto 0;">
+            <div class="zw-section-title"><span data-i18n="hand_upload_title">手掌照片上传</span></div>
+            <div class="hand-upload-area" id="quickHandUploadArea">
+                <div class="hand-upload-placeholder" id="quickHandUploadPlaceholder">
+                    <div class="hand-upload-icon">📷</div>
+                    <div class="hand-upload-text" data-i18n="hand_upload_placeholder">点击上传手掌照片，或拖拽到此处</div>
+                    <div class="hand-upload-hint" data-i18n="hand_upload_hint">支持 JPG/PNG，拍照或从相册选择</div>
+                </div>
+                <div class="hand-upload-preview" id="quickHandUploadPreview" style="display:none;">
+                    <img id="quickHandUploadImg" src="" alt="Palm">
+                    <button type="button" class="hand-upload-remove" id="quickHandUploadRemove" data-i18n="hand_upload_remove">移除图片</button>
+                </div>
+            </div>
+            <input type="file" id="quickHandFileInput" accept="image/*" style="display:none;">
+        </div>
+    </div>
+</section>
+
+<!-- Zi Wei Results Section -->
+<section class="section ziwei-result-section" id="sectionZiweiResult" style="display:none;">
+    <div class="container">
+        <h2 class="section-title" data-i18n="zw_result_title">命盘解读 · Chart Reading</h2>
+        
+        <!-- Zi Wei Share Buttons -->
+        <div class="share-buttons" id="ziweiShareButtons" style="display:none;">
+            <button class="btn-share btn-share-copy" id="btnZWShareCopy" title="Copy Results">
+                📋 <span data-i18n="share_copy">Copy</span>
+            </button>
+            <button class="btn-share btn-share-twitter" id="btnZWShareTwitter" title="Share on Twitter/X">
+                𝕏 <span data-i18n="share_twitter">Twitter</span>
+            </button>
+            <button class="btn-share btn-share-telegram" id="btnZWShareTelegram" title="Share on Telegram">
+                ✈ <span data-i18n="share_telegram">Telegram</span>
+            </button>
+            <button class="btn-share btn-share-facebook" id="btnZWShareFacebook" title="Share on Facebook">
+                📘 <span data-i18n="share_facebook">Facebook</span>
+            </button>
+        </div>
+
+        <!-- Free Preview -->
+        <div class="free-preview" id="zwPreview"></div>
+        
+        <!-- Lock Banner -->
+        <div class="lock-banner" id="zwLockBanner">
+            <div class="lock-icon">🔒</div>
+            <p data-i18n="zw_lock_banner">解锁完整命盘解读——<strong>事业财运、感情婚姻、大限分析、手相互证</strong></p>
+            <button class="btn-glow" id="btnZWUnlock" data-i18n="zw_btn_unlock">解锁完整解读 (8 USDT)</button>
+        </div>
+
+        <!-- Full Report (Hidden until paid) -->
+        <div class="full-report" id="zwFullReport" style="display:none;">
+            <div class="unlocked-badge" data-i18n="zw_unlocked_badge">✦ 完整命盘解读已解锁 ✦</div>
+        </div>
+
+        <!-- Privacy Notice -->
+        <div class="privacy-notice" id="zwPrivacyNotice" style="display:none;">
+            <p data-i18n="privacy_notice">🔒 你的数据完全在浏览器本地计算，不会上传到任何服务器。</p>
         </div>
     </div>
 </section>
@@ -268,11 +391,16 @@
 </footer>
 
 <!-- Scripts -->
+<script src="https://cdn.jsdelivr.net/npm/iztro@2.5.8/dist/iztro.min.js"></script>
 <script src="js/bazi-engine.js"></script>
 <script src="js/geo-data.js"></script>
 <script src="js/i18n.js"></script>
 <script src="js/commentary.js"></script>
 <script src="js/script-engine.js"></script>
+<script src="js/ziwei-data.js"></script>
+<script src="js/ziwei-engine.js"></script>
+<script src="js/ziwei-ui.js"></script>
+<script src="js/hand-reading.js"></script>
 <script src="js/payment.js"></script>
 <script src="js/app.js"></script>
 </body>
